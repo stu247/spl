@@ -5,7 +5,7 @@ This utility controls Sonos playlists including backup and restore.
 
 Here are the options:
 
-'''
+```
 usage: spl.py [-h] [-l] [-S] [-x PLAYLIST] [-X] [-f] [-i FILE] [-s SPEAKER]
               [-P] [-p] [-q PLAYLIST] [-m PLAYMODE] [-t]
 
@@ -38,7 +38,7 @@ optional arguments:
                         cross fade on. Lower case is off. Default is SRf.
   -t, --togglePausePlay
                         Toggle pause/play.
-'''
+```
 
 #####Dependencies
 
