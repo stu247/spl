@@ -155,7 +155,7 @@ class SPL:
                                 speaker.clear_queue()
                                 firstTrack = False
                             # process the track
-                            print(elem.text)
+                            #print(elem.text)
                             speaker.add_uri_to_queue(elem.text)
             speaker.create_sonos_playlist_from_queue(plName)
             speaker.clear_queue()
