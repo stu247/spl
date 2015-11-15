@@ -1,0 +1,5 @@
+# no new files will automatically be tracked by git
+# use "git add -f" to manually track a new file
+*
+# exclude directories so that git will walk the tree
+!*/

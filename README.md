@@ -7,7 +7,8 @@ Here are the options:
 
 ```
 usage: spl.py [-h] [-l] [-S] [-x PLAYLIST] [-X] [-f] [-i FILE] [-s SPEAKER]
-              [-P] [-p] [-q PLAYLIST] [-m PLAYMODE] [-t]
+              [-P] [-p] [-q PLAYLIST] [-m PLAYMODE] [-v VOLUME] [-t]
+              [-I INTERFACE]
 
 Utility for Sonos playlists including backup and restore. The backup file is
 XSPF format and is stored in the current directory. For import, the name of
@@ -35,9 +36,14 @@ optional arguments:
                         mode or option -s is required.
   -m PLAYMODE, --playMode PLAYMODE
                         Play mode: SRF, S = shuffle on, R = repeat on, F =
-                        cross fade on. Lower case is off. Default is SRf.
+                        cross fade on. Lower case is off. Default is SRf when
+                        using -q option.
+  -v VOLUME, --volume VOLUME
+                        Volume (0-100).
   -t, --togglePausePlay
                         Toggle pause/play.
+  -I INTERFACE, --interface INTERFACE
+                        Interface address for discover (generally not needed).
 ```
 
 #####Dependencies

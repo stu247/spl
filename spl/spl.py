@@ -174,7 +174,9 @@ class SPL:
 
         parser = argparse.ArgumentParser(description='''
 Utility for Sonos playlists including backup and restore.
-The backup file is XSPF format and is stored in the current directory.  For import, the name of the playlist is stored in the XSPF file, it is not the name of the file.
+The backup file is XSPF format and is stored in the current directory.  For
+import, the name of the playlist is stored in the XSPF file, it is not the
+name of the file.
 ''')
         parser.add_argument('-l', '--listPlaylist', action='store_true',
                             help='List the playlists.')
@@ -191,8 +193,8 @@ The backup file is XSPF format and is stored in the current directory.  For impo
         parser.add_argument('-s', '--speaker',
                             help='Speaker name or IP address.')
         parser.add_argument('-P', '--partyModeOn', action='store_true',
-                            help='Use all speakers.'
-                            '  Must be used with -s to designate the group coordinator.')
+                            help='Use all speakers.  Must be used with -s to'
+                            ' designate the group coordinator.')
         parser.add_argument('-p', '--partyModeOff', action='store_true',
                             help='Stop party mode.')
         parser.add_argument('-q', '--replaceQueue', metavar='PLAYLIST',
@@ -201,9 +203,14 @@ The backup file is XSPF format and is stored in the current directory.  For impo
         parser.add_argument('-m', '--playMode', default='SRf',
                         help='Play mode: SRF, S = shuffle on, R = repeat on,'
                             ' F = cross fade on.  Lower case is off.  Default'
-                            ' is SRf.')
+                            ' is SRf when using -q option.')
+        parser.add_argument('-v', '--volume', type=int,
+                            help='Volume (0-100).')
         parser.add_argument('-t', '--togglePausePlay', action='store_true',
                             help='Toggle pause/play.')
+        parser.add_argument('-I', '--interface',
+                            help='Interface address for discover (generally'
+                            ' not needed).')
         args = parser.parse_args()
         if args.playMode:
             playMode = args.playMode
@@ -211,7 +218,14 @@ The backup file is XSPF format and is stored in the current directory.  For impo
             playMode = 'SRf'
 
         # what speaker are we working with?
-        zones = soco.discover()
+        speaker = None
+        if args.interface:
+            zones = soco.discover(interface_addr=args.interface)
+        else:
+            zones = soco.discover()
+        if not zones:
+            print('Error: discover returned no speakers.')
+            exit(-2)
         speakerSelection = ''
         try:
             if args.speaker:
@@ -260,6 +274,7 @@ The backup file is XSPF format and is stored in the current directory.  For impo
                         state = tranInfo[u'current_transport_state']
                         print('  state : ' + state)
                         print('  mode : ' + self.getPlayMode(zone))
+                        print('  volume : ' + str(zone.volume))
                         info = zone.get_current_track_info()
                         artist = info[u'artist']
                         if artist and artist != '':
@@ -268,9 +283,14 @@ The backup file is XSPF format and is stored in the current directory.  For impo
                         if title and title != '':
                             print('  title : ' + title)
                         #pprint(tranInfo)
+                        #pprint(info)
                     except:
                         print('Error: cannot communicate with the speaker.')
             exit(0)
+
+        if args.partyModeOff and args.partyModeOn:
+            print('Error: can not have party mode on and off at the same time.')
+            exit(-2)
 
         # music everywhere!
         if args.partyModeOn:
@@ -328,6 +348,25 @@ The backup file is XSPF format and is stored in the current directory.  For impo
             for file in args.importPlaylistFile:
                 self.importPl(speaker, file)
             exit(0)
+
+        # set the volume
+        if args.volume:
+            if speakerSelection == 'random':
+                print('Error: speaker must be specified (-s) or the speakers'
+                      ' are already in party mode (-P) when setting volume.')
+                exit(-2)
+            if args.volume < 0:
+                print('Warning: volume too low, using 0')
+                vol = 0
+            elif args.volume > 100:
+                print('Warning: volume too high, using 100')
+                vol = 100
+            else:
+                vol = args.volume
+            try:
+                speaker.volume = vol
+            except:
+                print('Error: cannot communicate with the speaker.')
 
         # replace the queue with a playlist and start playing
         if args.replaceQueue:
