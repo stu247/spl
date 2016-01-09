@@ -23,6 +23,9 @@ optional arguments:
                         Export the playlist.
   -X, --exportAllPlaylists
                         Export all playlists.
+  -d  --exportDetails
+                        Export title, creator and album. Must be used with -x or -X.
+
   -f, --force           Force overwrite of export files.
   -i FILE, --importPlaylistFile FILE
                         Import the playlist file.
