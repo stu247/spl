@@ -220,11 +220,22 @@ name of the file.
         # what speaker are we working with?
         speaker = None
         if args.interface:
-            zones = soco.discover(interface_addr=args.interface)
+            try:
+                zones = soco.discover(interface_addr=args.interface)
+            except:
+                print('Error: invalid interface address: ' + args.interface)
+                exit(-2)
         else:
             zones = soco.discover()
         if not zones:
             print('Error: discover returned no speakers.')
+            if args.interface:
+                print(' Either the interface is down or you have no Sonos'
+                      ' speakers on the network.')
+            else:
+                print(' Either the interface is down, you have no Sonos'
+                      ' speakers on the network, or you may\n need to use -I'
+                      ' option.')
             exit(-2)
         speakerSelection = ''
         try:
