@@ -25,6 +25,8 @@ import argparse
 import os, sys, random
 import xml.etree.ElementTree as ET
 import soco
+import html
+import codecs
 from pprint import pprint
 
 class SPL:
@@ -89,13 +91,13 @@ class SPL:
             print("Error: could not play_from_queue")
 
 
-    def exportPl(self, speaker, pl, force):
+    def exportPl(self, speaker, pl, force, detail):
         """ Export playlist from speaker to an XSPF file. """
         fileName = pl.title + '.xspf'
         if not force and os.path.isfile(fileName):
             print('Error: file already exists: ' + fileName)
             return
-        with open(fileName, 'w') as fp:
+        with codecs.open(fileName, 'w', 'utf-8') as fp:
             fp.write('<?xml version="1.0" encoding="UTF-8"?>\n')
             fp.write('<playlist version="1" xmlns="http://xspf.org/ns/0/">\n')
             fp.write(' <title>%s</title>\n' % pl.title)
@@ -108,8 +110,17 @@ class SPL:
                 if not trackList:
                     break       # done
                 for item in trackList:
-                    fp.write('  <track><location>%s</location></track>\n'
-                             % item.resources[0].uri)
+                    fp.write('  <track>\n')
+                    if not detail:
+                      fp.write('   <location>%s</location>\n' % item.resources[0].uri)
+                    else:
+                      title = html.escape(item.title)
+                      fp.write('   <title>%s</title>\n' % title)
+                      creator = html.escape(item.creator)
+                      fp.write('   <creator>%s</creator>\n' % creator)
+                      album = html.escape(item.album)
+                      fp.write('   <album>%s</album>\n' % album)
+                    fp.write('  </track>\n')
                     cnt += 1
                 start += max_items
             fp.write(' </trackList>\n')
@@ -186,6 +197,8 @@ name of the file.
                             help='Export the playlist.', metavar='PLAYLIST')
         parser.add_argument('-X', '--exportAllPlaylists', action='store_true',
                             help='Export all playlists.')
+        parser.add_argument('-d', '--exportDetails', action='store_true',
+                            help='Export title, creator and album.')
         parser.add_argument('-f', '--force', action='store_true',
                             help='Force overwrite of export files.')
         parser.add_argument('-i', '--importPlaylistFile', action='append',
@@ -340,7 +353,7 @@ name of the file.
         if args.exportPlaylist or args.exportAllPlaylists:
             for pl in speaker.get_sonos_playlists():
                 if args.exportAllPlaylists or pl.title in args.exportPlaylist:
-                    self.exportPl(speaker, pl, args.force)
+                    self.exportPl(speaker, pl, args.force, args.exportDetails)
             exit(0)
 
         # import a playlist from a file
