@@ -23,9 +23,10 @@ optional arguments:
                         Export the playlist.
   -X, --exportAllPlaylists
                         Export all playlists.
-  -d  --exportDetails
-                        Export title, creator and album. Must be used with -x or -X.
-
+  -d DETAILS, --exportDetails DETAILS
+                        List specifying what information is in the export
+                        file. Possible values are ACLT. A = album, C =
+                        creator, L = location, T = title. Default is ACLT.
   -f, --force           Force overwrite of export files.
   -i FILE, --importPlaylistFile FILE
                         Import the playlist file.

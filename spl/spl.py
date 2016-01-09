@@ -5,7 +5,7 @@
 from __future__ import print_function
 
 """
-    Copyright 2015 Jim Stuhlmacher.
+    Copyright 2015-2016 Jim Stuhlmacher.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,7 +25,10 @@ import argparse
 import os, sys, random
 import xml.etree.ElementTree as ET
 import soco
-import html
+try:
+    import html
+except ImportError:
+    import cgi as html
 import codecs
 from pprint import pprint
 
@@ -91,7 +94,7 @@ class SPL:
             print("Error: could not play_from_queue")
 
 
-    def exportPl(self, speaker, pl, force, detail):
+    def exportPl(self, speaker, pl, force, details):
         """ Export playlist from speaker to an XSPF file. """
         fileName = pl.title + '.xspf'
         if not force and os.path.isfile(fileName):
@@ -111,15 +114,18 @@ class SPL:
                     break       # done
                 for item in trackList:
                     fp.write('  <track>\n')
-                    if not detail:
-                      fp.write('   <location>%s</location>\n' % item.resources[0].uri)
-                    else:
-                      title = html.escape(item.title)
-                      fp.write('   <title>%s</title>\n' % title)
-                      creator = html.escape(item.creator)
-                      fp.write('   <creator>%s</creator>\n' % creator)
-                      album = html.escape(item.album)
-                      fp.write('   <album>%s</album>\n' % album)
+                    if 'C' in details and hasattr(item, 'creator'):
+                        creator = html.escape(item.creator, True)
+                        fp.write('   <creator>%s</creator>\n' % creator)
+                    if 'T' in details and hasattr(item, 'title'):
+                        title = html.escape(item.title, True)
+                        fp.write('   <title>%s</title>\n' % title)
+                    if 'A' in details and hasattr(item, 'album'):
+                        album = html.escape(item.album, True)
+                        fp.write('   <album>%s</album>\n' % album)
+                    if 'L' in details:
+                        fp.write('   <location>%s</location>\n'
+                                 % item.resources[0].uri)
                     fp.write('  </track>\n')
                     cnt += 1
                 start += max_items
@@ -197,8 +203,12 @@ name of the file.
                             help='Export the playlist.', metavar='PLAYLIST')
         parser.add_argument('-X', '--exportAllPlaylists', action='store_true',
                             help='Export all playlists.')
-        parser.add_argument('-d', '--exportDetails', action='store_true',
-                            help='Export title, creator and album.')
+        parser.add_argument('-d', '--exportDetails', default='ACLT',
+                            help='List specifying what information is in the'
+                            ' export file.  Possible values are ACLT.'
+                            ' A = album, C = creator, L = location, T = title.'
+                            ' Default is ACLT.',
+                            metavar='DETAILS')
         parser.add_argument('-f', '--force', action='store_true',
                             help='Force overwrite of export files.')
         parser.add_argument('-i', '--importPlaylistFile', action='append',
