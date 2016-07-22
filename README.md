@@ -43,7 +43,7 @@ optional arguments:
                         cross fade on. Lower case is off. Default is SRf when
                         using -q option.
   -v VOLUME, --volume VOLUME
-                        Volume (0-100).
+                        Volume (0-100). +/- to increase/decrease.
   -t, --togglePausePlay
                         Toggle pause/play.
   -I INTERFACE, --interface INTERFACE

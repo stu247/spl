@@ -96,41 +96,46 @@ class SPL:
 
     def exportPl(self, speaker, pl, force, details):
         """ Export playlist from speaker to an XSPF file. """
-        fileName = pl.title + '.xspf'
+        fileName = pl.title.replace('/', '_').replace('\\', '_') + '.xspf'
         if not force and os.path.isfile(fileName):
             print('Error: file already exists: ' + fileName)
             return
-        with codecs.open(fileName, 'w', 'utf-8') as fp:
-            fp.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-            fp.write('<playlist version="1" xmlns="http://xspf.org/ns/0/">\n')
-            fp.write(' <title>%s</title>\n' % pl.title)
-            fp.write(' <trackList>\n')
-            start = 0
-            max_items = 100
-            cnt = 0
-            while True:
-                trackList = speaker.browse(pl, start=start, max_items=max_items)
-                if not trackList:
-                    break       # done
-                for item in trackList:
-                    fp.write('  <track>\n')
-                    if 'C' in details and hasattr(item, 'creator'):
-                        creator = html.escape(item.creator, True)
-                        fp.write('   <creator>%s</creator>\n' % creator)
-                    if 'T' in details and hasattr(item, 'title'):
-                        title = html.escape(item.title, True)
-                        fp.write('   <title>%s</title>\n' % title)
-                    if 'A' in details and hasattr(item, 'album'):
-                        album = html.escape(item.album, True)
-                        fp.write('   <album>%s</album>\n' % album)
-                    if 'L' in details:
-                        fp.write('   <location>%s</location>\n'
-                                 % item.resources[0].uri)
-                    fp.write('  </track>\n')
-                    cnt += 1
-                start += max_items
-            fp.write(' </trackList>\n')
-            fp.write('</playlist>\n')
+        try:
+            with codecs.open(fileName, 'w', 'utf-8') as fp:
+                fp.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+                fp.write('<playlist version="1" xmlns="http://xspf.org/ns/0/">\n')
+                fp.write(' <title>%s</title>\n' % pl.title)
+                fp.write(' <trackList>\n')
+                start = 0
+                max_items = 100
+                cnt = 0
+                while True:
+                    trackList = speaker.browse(pl, start=start,
+                                               max_items=max_items)
+                    if not trackList:
+                        break       # done
+                    for item in trackList:
+                        fp.write('  <track>\n')
+                        if 'C' in details and hasattr(item, 'creator'):
+                            creator = html.escape(item.creator, True)
+                            fp.write('   <creator>%s</creator>\n' % creator)
+                        if 'T' in details and hasattr(item, 'title'):
+                            title = html.escape(item.title, True)
+                            fp.write('   <title>%s</title>\n' % title)
+                        if 'A' in details and hasattr(item, 'album'):
+                            album = html.escape(item.album, True)
+                            fp.write('   <album>%s</album>\n' % album)
+                        if 'L' in details:
+                            fp.write('   <location>%s</location>\n'
+                                     % item.resources[0].uri)
+                        fp.write('  </track>\n')
+                        cnt += 1
+                    start += max_items
+                fp.write(' </trackList>\n')
+                fp.write('</playlist>\n')
+        except IOError as e:
+            print("Error: file {0}: {1}".format(fileName, e.strerror))
+            return
         print(pl.title + ': ' + str(cnt) + ' songs')
 
 
@@ -172,8 +177,11 @@ class SPL:
                                 speaker.clear_queue()
                                 firstTrack = False
                             # process the track
-                            #print(elem.text)
+                            print('.', end='')
+                            sys.stdout.flush()
                             speaker.add_uri_to_queue(elem.text)
+                if not firstTrack:
+                    print('')
             speaker.create_sonos_playlist_from_queue(plName)
             speaker.clear_queue()
         except ET.ParseError:
@@ -227,8 +235,8 @@ name of the file.
                         help='Play mode: SRF, S = shuffle on, R = repeat on,'
                             ' F = cross fade on.  Lower case is off.  Default'
                             ' is SRf when using -q option.')
-        parser.add_argument('-v', '--volume', type=int,
-                            help='Volume (0-100).')
+        parser.add_argument('-v', '--volume',
+                            help='Volume (0-100). +/- to increase/decrease.')
         parser.add_argument('-t', '--togglePausePlay', action='store_true',
                             help='Toggle pause/play.')
         parser.add_argument('-I', '--interface',
@@ -389,16 +397,25 @@ name of the file.
                 print('Error: speaker must be specified (-s) or the speakers'
                       ' are already in party mode (-P) when setting volume.')
                 exit(-2)
-            if args.volume < 0:
+            try:
+                vol = int(args.volume)
+            except ValueError:
+                print('Error: volume is not a number: ' + args.volume)
+                exit(-2)
+            if args.volume.startswith('+') or args.volume.startswith('-'):
+                vol = speaker.volume + vol
+            if vol < 0:
                 print('Warning: volume too low, using 0')
                 vol = 0
-            elif args.volume > 100:
+            elif vol > 100:
                 print('Warning: volume too high, using 100')
                 vol = 100
-            else:
-                vol = args.volume
             try:
-                speaker.volume = vol
+                if speakerSelection == 'party':
+                    for member in speaker.group.members:
+                        member.volume = vol
+                else:
+                    speaker.volume = vol
             except:
                 print('Error: cannot communicate with the speaker.')
 
