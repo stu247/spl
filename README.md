@@ -17,6 +17,7 @@ the playlist is stored in the XSPF file, it is not the name of the file.
 optional arguments:
   -h, --help            show this help message and exit
   -l, --listPlaylist    List the playlists.
+  -V, --verbose         Verbose error messages.
   -S, --listSpeakerInfo
                         List information about the speakers.
   -x PLAYLIST, --exportPlaylist PLAYLIST
@@ -52,5 +53,5 @@ optional arguments:
 
 #####Dependencies
 
-This utility uses the SoCo module version 0.11.1 (https://github.com/SoCo/SoCo) to control the Sonos speakers.  SoCo is available via pip, see the web page for details. Spl runs on Python 2.7 and 3.
+This utility uses the SoCo module versions 0.11.1 and 0.12 (https://github.com/SoCo/SoCo) to control the Sonos speakers.  SoCo is available via pip, see the web page for details. Spl runs on Python 2.7 and 3.
 

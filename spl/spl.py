@@ -30,6 +30,7 @@ try:
 except ImportError:
     import cgi as html
 import codecs
+import traceback
 from pprint import pprint
 
 class SPL:
@@ -56,6 +57,8 @@ class SPL:
                 speaker.cross_fade = False
         except:
             print('Error: cannot communicate with the speaker.')
+            if self.verbose:
+                traceback.print_exc()
 
     def getPlayMode(self, speaker):
         """ Retrieve the play mode and cross fade from the speaker. """
@@ -92,6 +95,8 @@ class SPL:
             speaker.play_from_queue(idx)
         except:
             print("Error: could not play_from_queue")
+            if self.verbose:
+                traceback.print_exc()
 
 
     def exportPl(self, speaker, pl, force, details):
@@ -109,9 +114,20 @@ class SPL:
                 start = 0
                 max_items = 100
                 cnt = 0
+                try:
+                    # MusicLibrary only available 0.12 and later
+                    ml = soco.music_library.MusicLibrary(speaker)
+                    mlAvailable = True
+                except:
+                    # MusicLibrary not available
+                    mlAvailable = False
                 while True:
-                    trackList = speaker.browse(pl, start=start,
-                                               max_items=max_items)
+                    if mlAvailable:
+                        trackList = ml.browse(pl, start=start,
+                                              max_items=max_items)
+                    else:
+                        trackList = speaker.browse(pl, start=start,
+                                                   max_items=max_items)
                     if not trackList:
                         break       # done
                     for item in trackList:
@@ -126,8 +142,8 @@ class SPL:
                             album = html.escape(item.album, True)
                             fp.write('   <album>%s</album>\n' % album)
                         if 'L' in details:
-                            fp.write('   <location>%s</location>\n'
-                                     % item.resources[0].uri)
+                            loc = html.escape(item.resources[0].uri, True)
+                            fp.write('   <location>%s</location>\n' % loc)
                         fp.write('  </track>\n')
                         cnt += 1
                     start += max_items
@@ -186,6 +202,8 @@ class SPL:
             speaker.clear_queue()
         except ET.ParseError:
             print('Error: invalid XML format.')
+            if self.verbose:
+                traceback.print_exc()
             return
         except IOError as e:
             print("Error: file {0}: {1}".format(fileName, e.strerror))
@@ -205,6 +223,9 @@ name of the file.
 ''')
         parser.add_argument('-l', '--listPlaylist', action='store_true',
                             help='List the playlists.')
+        parser.add_argument('-V', '--verbose', action='store_true',
+                            default=False,
+                            help='Verbose error messages.')
         parser.add_argument('-S', '--listSpeakerInfo', action='store_true',
                             help='List information about the speakers.')
         parser.add_argument('-x', '--exportPlaylist', action='append',
@@ -247,6 +268,7 @@ name of the file.
             playMode = args.playMode
         else:
             playMode = 'SRf'
+        self.verbose = args.verbose
 
         # what speaker are we working with?
         speaker = None
@@ -255,6 +277,8 @@ name of the file.
                 zones = soco.discover(interface_addr=args.interface)
             except:
                 print('Error: invalid interface address: ' + args.interface)
+                if self.verbose:
+                    traceback.print_exc()
                 exit(-2)
         else:
             zones = soco.discover()
@@ -284,6 +308,8 @@ name of the file.
                     break
         except:
             print('Error: could not discover any speakers.')
+            if self.verbose:
+                traceback.print_exc()
             exit(-2)
         if not speaker:
             print('Error: unable to find speaker.')
@@ -328,6 +354,15 @@ name of the file.
                         #pprint(info)
                     except:
                         print('Error: cannot communicate with the speaker.')
+                        if self.verbose:
+                            traceback.print_exc()
+                else:
+                    try:
+                        print('  volume : ' + str(zone.volume))
+                    except:
+                        print('Error: cannot communicate with the speaker.')
+                        if self.verbose:
+                            traceback.print_exc()
             exit(0)
 
         if args.partyModeOff and args.partyModeOn:
@@ -347,6 +382,8 @@ name of the file.
                 speaker.partymode()
             except:
                 print('Error: cannot communicate with one of the speaker.')
+                if self.verbose:
+                    traceback.print_exc()
             exit(0)
 
         # party over :-(
@@ -357,6 +394,8 @@ name of the file.
                         device.unjoin()
             except:
                 print('Error: cannot communicate with one of the speaker.')
+                if self.verbose:
+                    traceback.print_exc()
             exit(0)
 
         # toggle pause/play
@@ -376,6 +415,8 @@ name of the file.
                     print('Speaker now playing.')
             except:
                 print('Error: cannot communicate with the speaker.')
+                if self.verbose:
+                    traceback.print_exc()
             exit(0)
 
         # export some or all the playlists
@@ -418,6 +459,8 @@ name of the file.
                     speaker.volume = vol
             except:
                 print('Error: cannot communicate with the speaker.')
+                if self.verbose:
+                    traceback.print_exc()
 
         # replace the queue with a playlist and start playing
         if args.replaceQueue:
