@@ -27,8 +27,17 @@ import xml.etree.ElementTree as ET
 import soco
 try:
     import html
+    def unescape(s):
+        return html.unescape(s)
 except ImportError:
+    # Python 2.7
     import cgi as html
+    def unescape(s):
+        s = s.replace("&lt;", "<")
+        s = s.replace("&gt;", ">")
+        # this has to be last:
+        s = s.replace("&amp;", "&")
+        return s
 import codecs
 import traceback
 from pprint import pprint
@@ -131,6 +140,11 @@ class SPL:
                     if not trackList:
                         break       # done
                     for item in trackList:
+                        #pprint(item.__class__.__name__)
+                        #pprint(item.__dict__)
+                        #for res in item.resources:
+                        #    pprint(res.__class__.__name__)
+                        #    pprint(res.__dict__)
                         fp.write('  <track>\n')
                         if 'C' in details and hasattr(item, 'creator'):
                             creator = html.escape(item.creator, True)
@@ -195,7 +209,7 @@ class SPL:
                             # process the track
                             print('.', end='')
                             sys.stdout.flush()
-                            speaker.add_uri_to_queue(elem.text)
+                            speaker.add_uri_to_queue(unescape(elem.text))
                 if not firstTrack:
                     print('')
             speaker.create_sonos_playlist_from_queue(plName)
@@ -209,7 +223,7 @@ class SPL:
             print("Error: file {0}: {1}".format(fileName, e.strerror))
             return
         except:
-            print('Error: ' + sys.exc_info()[0])
+            traceback.print_exc()
 
 
     def __init__(self):
@@ -270,6 +284,9 @@ name of the file.
             playMode = 'SRf'
         self.verbose = args.verbose
 
+        if self.verbose:
+            print('SoCo version: ' + soco.__version__)
+
         # what speaker are we working with?
         speaker = None
         if args.interface:
@@ -317,11 +334,13 @@ name of the file.
         if len(speaker.group.members) > 1:
             # we are in party mode, use the coordinator
             speakerSelection = 'party'
-            speaker = speaker.group.coordinator
+            cspeaker = speaker.group.coordinator
+        else:
+            cspeaker = speaker
 
         # list the playlists
         if args.listPlaylist:
-            for pl in speaker.get_sonos_playlists():
+            for pl in cspeaker.get_sonos_playlists():
                 print(pl.title)
             exit(0)
 
@@ -389,7 +408,7 @@ name of the file.
         # party over :-(
         if args.partyModeOff:
             try:
-                for device in speaker.group.members:
+                for device in cspeaker.group.members:
                     if not device == device.group.coordinator:
                         device.unjoin()
             except:
@@ -405,13 +424,13 @@ name of the file.
                       ' are already in party mode (-P) to toggle pause/play.')
                 exit(-2)
             try:
-                state = speaker.get_current_transport_info()\
+                state = cspeaker.get_current_transport_info()\
                         [u'current_transport_state']
                 if state == 'PLAYING':
-                    speaker.pause()
+                    cspeaker.pause()
                     print('Speaker now paused.')
                 else:
-                    speaker.play()
+                    cspeaker.play()
                     print('Speaker now playing.')
             except:
                 print('Error: cannot communicate with the speaker.')
@@ -421,15 +440,15 @@ name of the file.
 
         # export some or all the playlists
         if args.exportPlaylist or args.exportAllPlaylists:
-            for pl in speaker.get_sonos_playlists():
+            for pl in cspeaker.get_sonos_playlists():
                 if args.exportAllPlaylists or pl.title in args.exportPlaylist:
-                    self.exportPl(speaker, pl, args.force, args.exportDetails)
+                    self.exportPl(cspeaker, pl, args.force, args.exportDetails)
             exit(0)
 
         # import a playlist from a file
         if args.importPlaylistFile:
             for file in args.importPlaylistFile:
-                self.importPl(speaker, file)
+                self.importPl(cspeaker, file)
             exit(0)
 
         # set the volume
@@ -452,10 +471,10 @@ name of the file.
                 print('Warning: volume too high, using 100')
                 vol = 100
             try:
-                if speakerSelection == 'party':
-                    for member in speaker.group.members:
-                        member.volume = vol
-                else:
+                #if speakerSelection == 'party':
+                #    for member in speaker.group.members:
+                #        member.volume = vol
+                #else:
                     speaker.volume = vol
             except:
                 print('Error: cannot communicate with the speaker.')
@@ -469,10 +488,10 @@ name of the file.
                       ' are already in party mode (-P) when replacing queue.')
                 exit(-2)
             foundIt = False
-            for pl in speaker.get_sonos_playlists():
+            for pl in cspeaker.get_sonos_playlists():
                 if pl.title == args.replaceQueue:
                     foundIt = True
-                    self.queue(speaker, pl, playMode)
+                    self.queue(cspeaker, pl, playMode)
             if not foundIt:
                 print('Error: playlist for queue not found: ' + args.playlistQ)
                 print(' Use -l option to see available playlists.')
@@ -483,7 +502,7 @@ name of the file.
                 print('Error: speaker must be specified (-s) or the speakers'
                       ' are already in party mode (-P) when changing playMode.')
                 exit(-2)
-            self.setPlayMode(speaker, playMode)
+            self.setPlayMode(cspeaker, playMode)
 
 if __name__ == "__main__":
     spl = SPL()
