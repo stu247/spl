@@ -53,5 +53,5 @@ optional arguments:
 
 #####Dependencies
 
-This utility uses the SoCo module versions 0.11.1 and 0.12 (https://github.com/SoCo/SoCo) to control the Sonos speakers.  SoCo is available via pip, see the web page for details. Spl runs on Python 2.7 and 3.
+This utility uses the SoCo module version 0.17 (https://github.com/SoCo/SoCo) to control the Sonos speakers.  SoCo is available via pip, see the web page for details. Spl runs on Python 2.7 and 3.
 
