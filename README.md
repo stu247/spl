@@ -51,7 +51,11 @@ optional arguments:
                         Interface address for discover (generally not needed).
 ```
 
-#####Dependencies
+### Limitations
+
+Playlists with streaming tracks do not import metadata correctly.
+
+##### Dependencies
 
 This utility uses the SoCo module version 0.17 (https://github.com/SoCo/SoCo) to control the Sonos speakers.  SoCo is available via pip, see the web page for details. Spl runs on Python 2.7 and 3.
 
